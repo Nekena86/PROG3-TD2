@@ -1,5 +1,3 @@
-package restaurent;
-
 public enum CategoryEnum {
     VEGETABLE,
     ANIMAL,
