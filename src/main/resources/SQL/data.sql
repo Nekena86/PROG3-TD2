@@ -22,3 +22,14 @@ where id = 1;
 update dish
 set price = 6000.0
 where id = 2;
+
+
+INSERT INTO DishIngredient (dish_id, ingredient_id, quantity, unit)
+VALUES
+    (1, 1, 1, 'PIECE'),
+    (1, 2, 0.25, 'KG'),
+    (2, 2, 0.5, 'KG'),
+    (2, 3, 0.15, 'L');
+
+UPDATE Dish SET selling_price = 8000 WHERE id = 1;
+UPDATE Dish SET selling_price = 12000 WHERE id = 2;
