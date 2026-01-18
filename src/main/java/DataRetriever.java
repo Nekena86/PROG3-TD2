@@ -263,4 +263,39 @@ public class DataRetriever {
                ps.executeQuery();
           }
      }
+     public List<dishIngredient> findIngredientsByDishId(Integer dishId) {
+          List<dishIngredient> result = new ArrayList<>();
+
+          String sql = """
+        SELECT i.id, i.name, i.price, i.category,
+               di.quantity, di.unit
+        FROM DishIngredient di
+        JOIN Ingredient i ON di.ingredient_id = i.id
+        WHERE di.dish_id = ?
+    """;
+
+          try (PreparedStatement ps = connection.prepareStatement(sql)) {
+               ps.setInt(1, dishId);
+               ResultSet rs = ps.executeQuery();
+
+               while (rs.next()) {
+                    Ingredient ingredient = new Ingredient(
+                            rs.getInt("id"),
+                            rs.getString("name"),
+                            rs.getDouble("price"),
+                            CategoryEnum.valueOf(rs.getString("category"))
+                    );
+
+                    dishIngredient di = new dishIngredient(
+                            null,
+                            ingredient,
+                            rs.getDouble("quantity"),
+                            rs.getString("unit")
+                    );
+
+                    result.add(di);
+               }
+          }
+          return result;
+     }
 }
