@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.Objects;
 
 public class Ingredient {
@@ -7,6 +8,7 @@ public class Ingredient {
     private Double price;
     private Dish dish;
     private Double quantity;
+    private List<StockMovement> stockMovementList = new ArrayList<>();
 
     public Double getQuantity() {
         return quantity;
@@ -72,6 +74,10 @@ public class Ingredient {
 
     public void setDish(Dish dish) {
         this.dish = dish;
+    }
+
+    public void addStockMovement(StockMovement movement) {
+        stockMovementList.add(movement);
     }
 
     @Override

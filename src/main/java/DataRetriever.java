@@ -102,7 +102,7 @@ public class DataRetriever {
                          ps.setDouble(4, ingredient.getPrice());
                          if (ingredient.getQuantity() != null) {
                               ps.setDouble(5, ingredient.getQuantity());
-                         }else {
+                         } else {
                               ps.setNull(5, Types.DOUBLE);
                          }
 
@@ -139,10 +139,10 @@ public class DataRetriever {
           }
 
           String baseSql = """
-                    UPDATE ingredient
-                    SET id_dish = NULL
-                    WHERE id_dish = ? AND id NOT IN (%s)
-                """;
+                      UPDATE ingredient
+                      SET id_dish = NULL
+                      WHERE id_dish = ? AND id NOT IN (%s)
+                  """;
 
           String inClause = ingredients.stream()
                   .map(i -> "?")
@@ -263,16 +263,19 @@ public class DataRetriever {
                ps.executeQuery();
           }
      }
-     public List<dishIngredient> findIngredientsByDishId(Integer dishId) {
-          List<dishIngredient> result = new ArrayList<>();
+
+
+     public List<DishIngredient> findIngredientsByDishId(Integer dishId) {
+
+          List<DishIngredient> result = new ArrayList<>();
 
           String sql = """
-        SELECT i.id, i.name, i.price, i.category,
-               di.quantity, di.unit
-        FROM DishIngredient di
-        JOIN Ingredient i ON di.ingredient_id = i.id
-        WHERE di.dish_id = ?
-    """;
+                      SELECT i.id, i.name, i.price, i.category,
+                             di.quantity, di.unit
+                      FROM DishIngredient di
+                      JOIN Ingredient i ON di.ingredient_id = i.id
+                      WHERE di.dish_id = ?
+                  """;
 
           try (PreparedStatement ps = connection.prepareStatement(sql)) {
                ps.setInt(1, dishId);
@@ -286,7 +289,7 @@ public class DataRetriever {
                             CategoryEnum.valueOf(rs.getString("category"))
                     );
 
-                    dishIngredient di = new dishIngredient(
+                    DishIngredient di = new DishIngredient(
                             null,
                             ingredient,
                             rs.getDouble("quantity"),
@@ -298,4 +301,51 @@ public class DataRetriever {
           }
           return result;
      }
+
+     public Ingredient saveIngredient(Ingredient toSave) {
+
+          String ingredientSql = """
+        INSERT INTO Ingredient(name, price, category)
+        VALUES (?, ?, ?)
+        ON CONFLICT (name) DO NOTHING
+        RETURNING id
+    """;
+
+          try (PreparedStatement ps = connection.prepareStatement(ingredientSql)) {
+               ps.setString(1, toSave.getName());
+               ps.setDouble(2, toSave.getPrice());
+               ps.setString(3, toSave.getCategory().name());
+
+               ResultSet rs = ps.executeQuery();
+               if (rs.next()) {
+                    toSave.setId(rs.getInt("id"));
+               }
+          }
+
+          saveStockMovements(toSave);
+
+          return toSave;
+     }
+
+     private void saveStockMovements(Ingredient ingredient) {
+
+          String sql = """
+        INSERT INTO StockMovement(id, ingredient_id, quantity, unit, movement_date)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT (id) DO NOTHING
+    """;
+
+          for (StockMovement sm : ingredient.getStockMovementList()) {
+               try (PreparedStatement ps = connection.prepareStatement(sql)) {
+                    ps.setObject(1, sm.getId());
+                    ps.setInt(2, ingredient.getId());
+                    ps.setDouble(3, sm.getQuantity());
+                    ps.setString(4, sm.getUnit());
+                    ps.setTimestamp(5, Timestamp.from(sm.getMovementDate()));
+                    ps.executeUpdate();
+               }
+          }
+     }
 }
+
+

@@ -25,3 +25,15 @@ CREATE TABLE DishIngredient (
                                 CONSTRAINT fk_ingredient
                                     FOREIGN KEY (ingredient_id) REFERENCES Ingredient(id)
 );
+
+CREATE TABLE StockMovement (
+                               id SERIAL PRIMARY KEY,
+                               ingredient_id INTEGER NOT NULL,
+                               quantity DOUBLE PRECISION NOT NULL,
+                               unit VARCHAR(10) NOT NULL,
+                               movement_date TIMESTAMP NOT NULL,
+
+                               CONSTRAINT fk_ingredient
+                                   FOREIGN KEY (ingredient_id)
+                                       REFERENCES Ingredient(id)
+);

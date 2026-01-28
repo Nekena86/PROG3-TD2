@@ -16,17 +16,6 @@ public class Dish {
         this.price = price;
     }
 
-    public Double getDishCost() {
-        double totalPrice = 0;
-        for (int i = 0; i < ingredients.size(); i++) {
-            Double quantity = ingredients.get(i).getQuantity();
-            if(quantity == null) {
-                throw new RuntimeException("...");
-            }
-            totalPrice = totalPrice + ingredients.get(i).getPrice() * quantity;
-        }
-        return totalPrice;
-    }
 
     public Dish() {
     }
@@ -99,6 +88,18 @@ public class Dish {
                 ", dishType=" + dishType +
                 ", ingredients=" + ingredients +
                 '}';
+    }
+
+    public Double getDishCost() {
+        double totalPrice = 0;
+        for (int i = 0; i < ingredients.size(); i++) {
+            Double quantity = ingredients.get(i).getQuantity();
+            if(quantity == null) {
+                throw new RuntimeException("...");
+            }
+            totalPrice = totalPrice + ingredients.get(i).getPrice() * quantity;
+        }
+        return totalPrice;
     }
 
     public Double getGrossMargin() {
