@@ -4,5 +4,6 @@
     <file url="file://$PROJECT_DIR$/src/main/resources/SQL/data.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/src/main/resources/SQL/db.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/src/main/resources/SQL/schema.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/../copie/ingredients-2025/src/main/resources/sql/data.sql" dialect="PostgreSQL" />
   </component>
 </project>
