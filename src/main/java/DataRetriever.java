@@ -7,8 +7,66 @@ import java.util.stream.Collectors;
 
 public class DataRetriever {
 
-     public Order saveOrder(Order order) {
+     public Sale createSaleFrom(Order order) {
 
+          if (order.getPaymentStatus() != paymentStatus.PAID) {
+               throw new RuntimeException(
+                       "Une vente ne peut être créée que pour une commande payée"
+               );
+          }
+
+          DBConnection dbConnection = new DBConnection();
+
+          try (Connection connection = dbConnection.getConnection()) {
+
+
+               PreparedStatement check = connection.prepareStatement("""
+            SELECT id FROM sale WHERE order_id = ?
+        """);
+               check.setInt(1, order.getId());
+
+               ResultSet rs = check.executeQuery();
+               if (rs.next()) {
+                    return null;
+               }
+
+
+               String saleSql = """
+            INSERT INTO sale(order_id, creation_datetime)
+            VALUES (?, ?)
+            RETURNING id
+        """;
+
+               Instant now = Instant.now();
+
+               try (PreparedStatement ps = connection.prepareStatement(saleSql)) {
+                    ps.setInt(1, order.getId());
+                    ps.setTimestamp(2, Timestamp.from(now));
+
+                    ResultSet result = ps.executeQuery();
+                    if (result.next()) {
+                         Sale sale = new Sale();
+                         sale.setId(result.getInt("id"));
+                         sale.setOrder(order);
+                         sale.setCreationDatetime(now);
+                         return sale;
+                    }
+               }
+
+               throw new RuntimeException("Erreur lors de la création de la vente");
+
+          } catch (SQLException e) {
+               throw new RuntimeException(e);
+          }
+     }
+
+
+      Order saveOrder(Order order) {
+           if (order.getPaymentStatus() == paymentStatus.PAID) {
+                throw new RuntimeException(
+                        "La commande a déjà été payée et ne peut plus être modifiée"
+                );
+           }
 
           for (DishOrder dishOrder : order.getDishOrderList()) {
                Dish dish = dishOrder.getDish();
@@ -35,15 +93,18 @@ public class DataRetriever {
           try (Connection connection = dbConnection.getConnection()) {
 
 
+               order.setPaymentStatus(paymentStatus.UNPAID);
+
                String orderSql = """
-            INSERT INTO Orders(reference, creation_datetime)
-            VALUES (?, ?)
-            RETURNING id
-        """;
+    INSERT INTO Orders(reference, creation_datetime, payment_status)
+    VALUES (?, ?, ?)
+    RETURNING id
+""";
 
                try (PreparedStatement ps = connection.prepareStatement(orderSql)) {
                     ps.setString(1, order.getReference());
                     ps.setTimestamp(2, Timestamp.from(order.getCreationDatetime()));
+                    ps.setString(3, order.getPaymentStatus().name());
 
                     ResultSet rs = ps.executeQuery();
                     if (rs.next()) {
@@ -74,23 +135,40 @@ public class DataRetriever {
      }
 
 
+
      Order findOrderByReference(String reference) {
           DBConnection dbConnection = new DBConnection();
           try (Connection connection = dbConnection.getConnection()) {
+
                PreparedStatement preparedStatement = connection.prepareStatement("""
-                    select id, reference, creation_datetime from "order" where reference like ?""");
+            SELECT id, reference, creation_datetime, payment_status
+            FROM "order"
+            WHERE reference = ?
+        """);
+
                preparedStatement.setString(1, reference);
                ResultSet resultSet = preparedStatement.executeQuery();
+
                if (resultSet.next()) {
                     Order order = new Order();
                     Integer idOrder = resultSet.getInt("id");
+
                     order.setId(idOrder);
                     order.setReference(resultSet.getString("reference"));
-                    order.setCreationDatetime(resultSet.getTimestamp("creation_datetime").toInstant());
+                    order.setCreationDatetime(
+                            resultSet.getTimestamp("creation_datetime").toInstant()
+                    );
+
+                    order.setPaymentStatus(
+                            paymentStatus.valueOf(resultSet.getString("payment_status"))
+                    );
+
                     order.setDishOrderList(findDishOrderByIdOrder(idOrder));
                     return order;
                }
+
                throw new RuntimeException("Order not found with reference " + reference);
+
           } catch (SQLException e) {
                throw new RuntimeException(e);
           }

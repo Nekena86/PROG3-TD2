@@ -6,6 +6,7 @@ public class Order {
     private Integer id;
     private String reference;
     private Instant creationDatetime;
+    private paymentStatus paymentStatus;
     private List<DishOrder> dishOrderList;
 
     public Integer getId() {
@@ -38,6 +39,13 @@ public class Order {
 
     public void setDishOrderList(List<DishOrder> dishOrderList) {
         this.dishOrderList = dishOrderList;
+    }
+
+    public paymentStatus getPaymentStatus() {
+        return paymentStatus;
+    }
+    public void setPaymentStatus(paymentStatus paymentStatus) {
+        this.paymentStatus = paymentStatus;
     }
 
     @Override
