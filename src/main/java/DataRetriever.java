@@ -9,10 +9,12 @@ public class DataRetriever {
 
      public Order saveOrder(Order order) {
 
-          for (DishOrder dishOrder : order.getDishOrders()) {
+
+          for (DishOrder dishOrder : order.getDishOrderList()) {
                Dish dish = dishOrder.getDish();
 
                for (DishIngredient di : dish.getDishIngredients()) {
+
                     double required =
                             di.getQuantity() * dishOrder.getQuantity();
 
@@ -27,43 +29,48 @@ public class DataRetriever {
                     }
                }
           }
+
           DBConnection dbConnection = new DBConnection();
+
+          try (Connection connection = dbConnection.getConnection()) {
 
 
                String orderSql = """
-        INSERT INTO Orders(reference, creation_datetime)
-        VALUES (?, ?)
-        RETURNING id
-    """;
+            INSERT INTO Orders(reference, creation_datetime)
+            VALUES (?, ?)
+            RETURNING id
+        """;
 
+               try (PreparedStatement ps = connection.prepareStatement(orderSql)) {
+                    ps.setString(1, order.getReference());
+                    ps.setTimestamp(2, Timestamp.from(order.getCreationDatetime()));
 
-
-          try (PreparedStatement ps = connection.prepareStatement(orderSql)) {
-               ps.setString(1, order.getReference());
-               ps.setTimestamp(2, Timestamp.from(order.getCreationDatetime()));
-
-               ResultSet rs = ps.executeQuery();
-               if (rs.next()) {
-                    order.setId(rs.getInt("id"));
+                    ResultSet rs = ps.executeQuery();
+                    if (rs.next()) {
+                         order.setId(rs.getInt("id"));
+                    }
                }
-          }
 
 
-          String dishOrderSql = """
-        INSERT INTO DishOrder(order_id, dish_id, quantity)
-        VALUES (?, ?, ?)
-    """;
+               String dishOrderSql = """
+            INSERT INTO DishOrder(order_id, dish_id, quantity)
+            VALUES (?, ?, ?)
+        """;
 
-          for (DishOrder d : order.getDishOrders()) {
-               try (PreparedStatement ps = connection.prepareStatement(dishOrderSql)) {
-                    ps.setInt(1, order.getId());
-                    ps.setInt(2, d.getDish().getId());
-                    ps.setInt(3, d.getQuantity());
-                    ps.executeUpdate();
+               for (DishOrder d : order.getDishOrderList()) {
+                    try (PreparedStatement ps = connection.prepareStatement(dishOrderSql)) {
+                         ps.setInt(1, order.getId());
+                         ps.setInt(2, d.getDish().getId());
+                         ps.setInt(3, d.getQuantity());
+                         ps.executeUpdate();
+                    }
                }
-          }
 
-          return order;
+               return order;
+
+          } catch (SQLException e) {
+               throw new RuntimeException(e);
+          }
      }
 
 
